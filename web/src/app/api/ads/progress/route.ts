@@ -19,14 +19,15 @@ export async function GET(request: NextRequest) {
   if (!isMetaOpsAuthorized(request.cookies.get(META_OPS_COOKIE)?.value)) return NextResponse.json({ error: "Meta Ops password required" }, { status: 401 });
   const accountId = request.nextUrl.searchParams.get("accountId") || "act_1074141625049232";
   try {
-    const [campaignResult, adsetResult, adResult] = await Promise.all([
-      callPipeboardTool("get_campaigns", { account_id: accountId, limit: 200, status_filter: "all" }),
-      callPipeboardTool("get_adsets", { account_id: accountId, limit: 500 }),
-      callPipeboardTool("get_ads", { account_id: accountId, limit: 500 }),
+    const [campaignSettled, adsetSettled, adSettled] = await Promise.allSettled([
+      callPipeboardTool("get_campaigns", { account_id: accountId, limit: 200 }),
+      callPipeboardTool("get_adsets", { account_id: accountId, limit: 200 }),
+      callPipeboardTool("get_ads", { account_id: accountId, limit: 200 }),
     ]);
-    const campaigns = Array.isArray(decode(campaignResult).data) ? decode(campaignResult).data as Record<string, unknown>[] : [];
-    const adsets = Array.isArray(decode(adsetResult).data) ? decode(adsetResult).data as Record<string, unknown>[] : [];
-    const ads = Array.isArray(decode(adResult).data) ? decode(adResult).data as Record<string, unknown>[] : [];
+    if (campaignSettled.status === "rejected") throw campaignSettled.reason;
+    const campaigns = Array.isArray(decode(campaignSettled.value).data) ? decode(campaignSettled.value).data as Record<string, unknown>[] : [];
+    const adsets = adsetSettled.status === "fulfilled" && Array.isArray(decode(adsetSettled.value).data) ? decode(adsetSettled.value).data as Record<string, unknown>[] : [];
+    const ads = adSettled.status === "fulfilled" && Array.isArray(decode(adSettled.value).data) ? decode(adSettled.value).data as Record<string, unknown>[] : [];
     const progress = campaigns.map((campaign) => {
       const id = String(campaign.id || campaign.campaign_id || "");
       const campaignAdsets = adsets.filter((adset) => String(adset.campaign_id || adset.campaignId || "") === id);
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
         ads: { total: campaignAds.length, active: count(campaignAds, "active"), paused: count(campaignAds, "paused"), inProcess: count(campaignAds, "in_process"), issues: count(campaignAds, "with_issues") },
       };
     });
-    return NextResponse.json({ accountId, checkedAt: new Date().toISOString(), progress });
+    return NextResponse.json({ accountId, checkedAt: new Date().toISOString(), progress, partial: adsetSettled.status === "rejected" || adSettled.status === "rejected" });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to load publishing progress" }, { status: 502 });
   }
