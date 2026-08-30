@@ -32,3 +32,23 @@ services:
         sync: false
       - key: META_MONITOR_SECRET
         sync: false
+      - key: META_OPS_URL
+        sync: false
+  - type: cron
+    name: company-studio-meta-monitor
+    runtime: node
+    rootDir: web
+    schedule: "*/5 * * * *"
+    buildCommand: npm ci
+    startCommand: node scripts/meta-monitor.mjs
+    plan: free
+    envVars:
+      - key: META_OPS_URL
+        fromService:
+          type: web
+          name: company-studio-meta-ops
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: META_MONITOR_SECRET
+        sync: false
+      - key: PIPEBOARD_MCP_TOKEN
+        sync: false

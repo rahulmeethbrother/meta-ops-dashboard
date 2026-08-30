@@ -52,3 +52,16 @@ export async function findRejectedAds() {
   }));
   return results.flat().filter((ad) => !["paused", "archived", "deleted"].includes(ad.status.toLowerCase()));
 }
+
+export async function pauseRejectedAds() {
+  const rejected = await findRejectedAds();
+  const logs = await Promise.all(rejected.map(async (ad) => {
+    try {
+      await callPipeboardTool("update_ad", { ad_id: ad.adId, status: "PAUSED" });
+      return { ...ad, action: "paused", actionAt: new Date().toISOString() };
+    } catch (error) {
+      return { ...ad, action: "failed", actionAt: new Date().toISOString(), actionError: error instanceof Error ? error.message : "Pause failed" };
+    }
+  }));
+  return logs;
+}
