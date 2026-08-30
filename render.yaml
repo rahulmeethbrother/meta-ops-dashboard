@@ -24,3 +24,7 @@ services:
         sync: false
       - key: META_MCP_BRIDGE_TOKEN
         sync: false
+      - key: PIPEBOARD_MCP_URL
+        value: https://meta-ads.mcp.pipeboard.co/
+      - key: PIPEBOARD_MCP_TOKEN
+        sync: false
