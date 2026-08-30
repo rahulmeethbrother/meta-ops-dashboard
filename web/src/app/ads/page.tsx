@@ -6,6 +6,7 @@ import type { MetaOverview } from "@/lib/meta-dashboard";
 
 type RejectedAd = { adId: string; adName: string; accountId: string; status: string; issue: string; detectedAt: string };
 type RejectionLog = RejectedAd & { action: string; actionAt: string; actionError?: string };
+type CampaignProgress = { campaignId: string; campaignName: string; campaignStatus: string; adsets: { total: number; active: number; paused: number; inProcess: number; issues: number }; ads: { total: number; active: number; paused: number; inProcess: number; issues: number } };
 
 function money(value: number) {
   return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -23,6 +24,7 @@ function AdsDashboard() {
   const [rejectedAdsets, setRejectedAdsets] = useState<RejectedAd[]>([]);
   const [logs, setLogs] = useState<RejectionLog[]>([]);
   const [checkingRejected, setCheckingRejected] = useState(false);
+  const [progress, setProgress] = useState<CampaignProgress[]>([]);
 
   async function load() {
     setRefreshing(true);
@@ -66,6 +68,12 @@ function AdsDashboard() {
 
   useEffect(() => {
     void load();
+    const timer = window.setInterval(() => {
+      void fetch("/api/ads/progress?accountId=act_1074141625049232", { cache: "no-store" }).then(async (response) => {
+        if (response.ok) setProgress(((await response.json()) as { progress?: CampaignProgress[] }).progress ?? []);
+      });
+    }, 5000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const totals = useMemo(() => {
@@ -130,6 +138,11 @@ function AdsDashboard() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="ads-section">
+        <div className="spread"><div><span className="ads-section-kicker">PUBLISHING PROGRESS</span><h2>H39 campaign delivery</h2></div><span className="muted">Live refresh every 5 seconds</span></div>
+        <div className="ads-panel">{progress.length === 0 ? <p className="muted">Loading live hierarchy progress…</p> : progress.map((item) => <div className="ads-check" key={item.campaignId}><span className={`ads-status ads-status-${item.campaignStatus === "active" ? "active" : item.campaignStatus === "with_issues" ? "disabled" : "unsettled"}`}><i />{item.campaignStatus}</span><div><strong>{item.campaignName}</strong><small>Ad sets: {item.adsets.active}/{item.adsets.total} active · Ads: {item.ads.active}/{item.ads.total} active{item.ads.inProcess ? ` · ${item.ads.inProcess} processing` : ""}{item.ads.issues ? ` · ${item.ads.issues} with issues` : ""}</small></div></div>)}</div>
       </section>
 
       <section className="ads-section">
