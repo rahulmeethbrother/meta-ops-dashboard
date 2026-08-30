@@ -1,0 +1,21 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Server-only packages that must not be bundled by webpack.
+  serverExternalPackages: [
+    "firebase-admin",
+    "@google-cloud/tasks",
+    "@google-cloud/secret-manager",
+  ],
+  headers: async () => [
+    {
+      source: "/(.*)",
+      headers: [
+        { key: "X-Frame-Options", value: "DENY" },
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      ],
+    },
+  ],
+};
+
+export default nextConfig;

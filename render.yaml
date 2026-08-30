@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: company-studio-meta-ops
+    runtime: node
+    rootDir: web
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start -- -p $PORT
+    healthCheckPath: /ads
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_B64
+        sync: false
+      - key: GCP_PROJECT
+        sync: false
+      - key: META_MCP_BRIDGE_URL
+        sync: false
+      - key: META_MCP_BRIDGE_TOKEN
+        sync: false
