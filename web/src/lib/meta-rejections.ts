@@ -80,8 +80,7 @@ export async function findRejectedAds() {
 
 export async function pauseRejectedAds() {
   const found = await findRejectedAds();
-  const rejected = found.ads;
-  const logs = await Promise.all(rejected.map(async (ad) => {
+  const adLogs = await Promise.all(found.ads.map(async (ad) => {
     try {
       await callPipeboardTool("update_ad", { ad_id: ad.adId, status: "PAUSED" });
       return { ...ad, action: "paused", actionAt: new Date().toISOString() };
@@ -89,5 +88,13 @@ export async function pauseRejectedAds() {
       return { ...ad, action: "failed", actionAt: new Date().toISOString(), actionError: error instanceof Error ? error.message : "Pause failed" };
     }
   }));
-  return logs;
+  const adsetLogs = await Promise.all(found.adsets.map(async (adset) => {
+    try {
+      await callPipeboardTool("update_adset", { adset_id: adset.adId, status: "PAUSED" });
+      return { ...adset, action: "paused", actionAt: new Date().toISOString() };
+    } catch (error) {
+      return { ...adset, action: "failed", actionAt: new Date().toISOString(), actionError: error instanceof Error ? error.message : "Pause failed" };
+    }
+  }));
+  return [...adLogs, ...adsetLogs];
 }
