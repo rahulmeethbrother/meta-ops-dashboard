@@ -20,6 +20,7 @@ function AdsDashboard() {
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [rejected, setRejected] = useState<RejectedAd[]>([]);
+  const [rejectedAdsets, setRejectedAdsets] = useState<RejectedAd[]>([]);
   const [logs, setLogs] = useState<RejectionLog[]>([]);
 
   async function load() {
@@ -35,8 +36,9 @@ function AdsDashboard() {
        setOverview((await response.json()) as MetaOverview);
        const rejectionResponse = await fetch("/api/ads/rejections", { cache: "no-store" });
        if (rejectionResponse.ok) {
-         const rejectionData = (await rejectionResponse.json()) as { rejected?: RejectedAd[]; logs?: RejectionLog[] };
+         const rejectionData = (await rejectionResponse.json()) as { rejected?: RejectedAd[]; rejectedAdsets?: RejectedAd[]; logs?: RejectionLog[] };
          setRejected(rejectionData.rejected ?? []);
+         setRejectedAdsets(rejectionData.rejectedAdsets ?? []);
          setLogs(rejectionData.logs ?? []);
        }
     } catch (err) {
@@ -121,7 +123,8 @@ function AdsDashboard() {
 
       <section className="ads-section">
         <div className="spread"><div><span className="ads-section-kicker">REJECTION MONITOR</span><h2>Rejected and still active</h2></div><span className="muted">Auto-action: pause</span></div>
-        {rejected.length === 0 ? <div className="ads-panel"><p className="muted">No active rejected ads found in the latest check.</p></div> : <div className="ads-panel">{rejected.map((ad) => <div className="ads-check" key={ad.adId}><span className="ads-check-icon">!</span><div><strong>{ad.adName}</strong><small>{ad.accountId} · {ad.issue}</small></div><span className="ads-status ads-status-unsettled"><i />{ad.status}</span></div>)}</div>}
+        {rejected.length === 0 && rejectedAdsets.length === 0 ? <div className="ads-panel"><p className="muted">No active rejected ads or ad sets found in the latest check.</p></div> : <div className="ads-panel">{[...rejected.map((ad) => ({ ...ad, kind: "Ad" })), ...rejectedAdsets.map((ad) => ({ ...ad, kind: "Ad set" }))].map((ad) => <div className="ads-check" key={`${ad.kind}-${ad.adId}`}><span className="ads-check-icon">!</span><div><strong>{ad.kind}: {ad.adName}</strong><small>{ad.accountId} · {ad.issue}</small></div><span className="ads-status ads-status-unsettled"><i />{ad.status}</span></div>)}</div>}
+        <div className="ads-panel ads-delete-note"><strong>Delete all rejected</strong><span>Disabled: Pipeboard does not expose a safe delete operation. The monitor pauses and logs rejected objects instead.</span></div>
       </section>
 
       <section className="ads-lower-grid">

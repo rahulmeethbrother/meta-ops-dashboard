@@ -12,13 +12,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Meta Ops password required" }, { status: 401 });
   }
   try {
-    const rejected = await findRejectedAds();
+    const found = await findRejectedAds();
     let logs: unknown[] = [];
     try {
       const snapshot = await db().collection("meta_rejection_logs").orderBy("actionAt", "desc").limit(100).get();
       logs = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     } catch { /* Firestore is optional for read-only previews. */ }
-    return NextResponse.json({ rejected, logs, checkedAt: new Date().toISOString(), autoAction: "pause" });
+    return NextResponse.json({ rejected: found.ads, rejectedAdsets: found.adsets, logs, checkedAt: new Date().toISOString(), autoAction: "pause" });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to inspect rejected ads" }, { status: 502 });
   }

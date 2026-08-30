@@ -10,6 +10,7 @@ export interface RejectedAd {
   status: string;
   issue: string;
   detectedAt: string;
+  kind?: "ad" | "adset";
 }
 
 function decode(result: unknown): Record<string, unknown> {
@@ -47,14 +48,39 @@ export async function findRejectedAds() {
           status: String(ad.status || ad.effective_status || "unknown"),
           issue: issueText(ad),
           detectedAt: new Date().toISOString(),
+          kind: "ad",
         }));
     } catch { return []; }
   }));
-  return results.flat().filter((ad) => !["paused", "archived", "deleted"].includes(ad.status.toLowerCase()));
+  const rejectedAds = results.flat().filter((ad) => !["paused", "archived", "deleted"].includes(ad.status.toLowerCase()));
+  const adsetResults = await Promise.all(rows.map(async (account) => {
+    const rawId = String((account as Record<string, unknown>).id || (account as Record<string, unknown>).account_id || "");
+    const accountId = rawId.startsWith("act_") ? rawId : `act_${rawId}`;
+    try {
+      const adsets = decode(await callPipeboardTool("get_adsets", { account_id: accountId, limit: 200 }));
+      return (Array.isArray(adsets.data) ? adsets.data : [])
+        .filter((adset: Record<string, unknown>) => {
+          const status = String(adset.status || adset.effective_status || "").toLowerCase();
+          return Boolean(adset.issues_info || adset.issues || adset.rejection_reason || status.includes("reject") || status.includes("disapprov"));
+        })
+        .map((adset: Record<string, unknown>) => ({
+          adId: String(adset.id || adset.adset_id || ""),
+          adName: String(adset.name || adset.adset_name || "Unnamed ad set"),
+          campaignId: adset.campaign_id ? String(adset.campaign_id) : undefined,
+          accountId,
+          status: String(adset.status || adset.effective_status || "unknown"),
+          issue: issueText(adset),
+          detectedAt: new Date().toISOString(),
+          kind: "adset" as const,
+        }));
+    } catch { return []; }
+  }));
+  return { ads: rejectedAds, adsets: adsetResults.flat().filter((adset) => !["paused", "archived", "deleted"].includes(adset.status.toLowerCase())) };
 }
 
 export async function pauseRejectedAds() {
-  const rejected = await findRejectedAds();
+  const found = await findRejectedAds();
+  const rejected = found.ads;
   const logs = await Promise.all(rejected.map(async (ad) => {
     try {
       await callPipeboardTool("update_ad", { ad_id: ad.adId, status: "PAUSED" });
