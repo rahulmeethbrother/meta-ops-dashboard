@@ -5,6 +5,7 @@ import Link from "next/link";
 
 const defaultLinks = ["https://cutt.ly/0ydtKriA", "https://cutt.ly/PydtKHqY", "https://cutt.ly/VydyVqZ9", "https://cutt.ly/dydyVQyu", "https://cutt.ly/3ydrYllJ"];
 type MetaOption = { id: string; name: string; logo?: string | null };
+type CampaignProgress = { campaignId: string; campaignName: string; campaignStatus: string; adsets: { total: number; active: number; paused: number; inProcess: number; issues: number }; ads: { total: number; active: number; paused: number; inProcess: number; issues: number } };
 
 function Builder() {
   const [folder, setFolder] = useState("image_generator/generated_images_500");
@@ -29,6 +30,7 @@ function Builder() {
   const [copies, setCopies] = useState("1");
   const [links, setLinks] = useState(defaultLinks);
   const [planned, setPlanned] = useState(false);
+  const [progress, setProgress] = useState<CampaignProgress[]>([]);
 
   useEffect(() => {
     void fetch("/api/ads/access").then((response) => {
@@ -44,6 +46,15 @@ function Builder() {
       setPages(data.pages ?? []);
       if (data.pages?.length && !data.pages.some((page) => page.id === pageId)) setPageId(data.pages[0].id);
     });
+  }, [accountId]);
+
+  useEffect(() => {
+    const refresh = () => void fetch(`/api/ads/progress?accountId=${encodeURIComponent(accountId)}`, { cache: "no-store" }).then(async (response) => {
+      if (response.ok) setProgress(((await response.json()) as { progress?: CampaignProgress[] }).progress ?? []);
+    });
+    refresh();
+    const timer = window.setInterval(refresh, 5000);
+    return () => window.clearInterval(timer);
   }, [accountId]);
 
   const plan = useMemo(() => {
@@ -79,7 +90,7 @@ function Builder() {
         <button className="btn builder-submit" onClick={() => setPlanned(true)}>Validate live build plan <span>→</span></button>
         {planned && <div className="builder-success">Plan validated, not published: {plan.campaigns} campaigns, {plan.adsets} ad sets, {plan.ads} ads, {plan.images} source images, {plan.daily.toFixed(2)} daily budget. {budgetMode.toUpperCase()} structure is ready for the queued publisher.</div>}
       </section>
-      <aside className="builder-summary"><span className="ads-section-kicker">02 / PLAN</span><h2>Build footprint</h2><div className="builder-stat"><span>Campaigns</span><strong>{plan.campaigns}</strong></div><div className="builder-stat"><span>Ad sets</span><strong>{plan.adsets}</strong></div><div className="builder-stat"><span>Ads</span><strong>{plan.ads}</strong></div><div className="builder-stat"><span>Source images</span><strong>{plan.images}</strong></div><div className="builder-stat"><span>{budgetMode.toUpperCase()} daily budget</span><strong>${plan.daily.toFixed(2)}</strong></div><p className="muted">{country} · {gender} · {minAge}–{maxAge} · {optimization} · {assetSource}</p></aside>
+      <aside className="builder-summary"><span className="ads-section-kicker">02 / PLAN</span><h2>Build footprint</h2><div className="builder-stat"><span>Campaigns</span><strong>{plan.campaigns}</strong></div><div className="builder-stat"><span>Ad sets</span><strong>{plan.adsets}</strong></div><div className="builder-stat"><span>Ads</span><strong>{plan.ads}</strong></div><div className="builder-stat"><span>Source images</span><strong>{plan.images}</strong></div><div className="builder-stat"><span>{budgetMode.toUpperCase()} daily budget</span><strong>${plan.daily.toFixed(2)}</strong></div><p className="muted">{country} · {gender} · {minAge}–{maxAge} · {optimization} · {assetSource}</p><div className="builder-progress"><span className="ads-section-kicker">LIVE PUBLISHED PROGRESS</span>{progress.length === 0 ? <small>Nothing published or loading…</small> : progress.slice(0, 8).map((item) => <div className="builder-progress-row" key={item.campaignId}><strong>{item.campaignName}</strong><small>{item.adsets.active}/{item.adsets.total} ad sets · {item.ads.active}/{item.ads.total} ads · {item.campaignStatus}</small></div>)}</div></aside>
     </div>
   </div>;
 }

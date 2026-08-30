@@ -11,7 +11,8 @@
   --ok: #3fb950;
   --warn: #d29922;
 }
- .builder-identities { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }.builder-identities span { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; color: #dfe7f5; background: #11151d; border: 1px solid #344055; border-radius: 999px; font-size: 11px; }.builder-identities img, .builder-identities i { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; background: #4c5b73; }
+.builder-identities { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }.builder-identities span { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; color: #dfe7f5; background: #11151d; border: 1px solid #344055; border-radius: 999px; font-size: 11px; }.builder-identities img, .builder-identities i { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; background: #4c5b73; }
+.builder-progress { margin-top: 22px; padding-top: 18px; border-top: 1px solid #344055; }.builder-progress > small { display: block; margin-top: 10px; color: var(--muted); }.builder-progress-row { padding: 10px 0; border-bottom: 1px solid #344055; }.builder-progress-row strong, .builder-progress-row small { display: block; }.builder-progress-row strong { color: #dfe7f5; font-size: 11px; }.builder-progress-row small { margin-top: 4px; color: var(--muted); font-size: 10px; }
 * { box-sizing: border-box; }
 
 body {
