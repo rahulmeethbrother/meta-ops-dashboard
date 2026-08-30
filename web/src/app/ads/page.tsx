@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { MetaOverview } from "@/lib/meta-dashboard";
 
 type RejectedAd = { adId: string; adName: string; accountId: string; status: string; issue: string; detectedAt: string };
+type RejectionLog = RejectedAd & { action: string; actionAt: string; actionError?: string };
 
 function money(value: number) {
   return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -19,6 +20,7 @@ function AdsDashboard() {
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [rejected, setRejected] = useState<RejectedAd[]>([]);
+  const [logs, setLogs] = useState<RejectionLog[]>([]);
 
   async function load() {
     setRefreshing(true);
@@ -32,7 +34,11 @@ function AdsDashboard() {
        if (!response.ok) throw new Error(await response.text());
        setOverview((await response.json()) as MetaOverview);
        const rejectionResponse = await fetch("/api/ads/rejections", { cache: "no-store" });
-       if (rejectionResponse.ok) setRejected(((await rejectionResponse.json()) as { rejected?: RejectedAd[] }).rejected ?? []);
+       if (rejectionResponse.ok) {
+         const rejectionData = (await rejectionResponse.json()) as { rejected?: RejectedAd[]; logs?: RejectionLog[] };
+         setRejected(rejectionData.rejected ?? []);
+         setLogs(rejectionData.logs ?? []);
+       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load metrics");
     } finally {
@@ -106,6 +112,11 @@ function AdsDashboard() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="ads-section">
+        <div className="spread"><div><span className="ads-section-kicker">AUDIT LOG</span><h2>Monitor history</h2></div><span className="muted">Last 100 actions</span></div>
+        <div className="ads-panel">{logs.length === 0 ? <p className="muted">No recorded actions yet. The monitor records each pause attempt in Firestore.</p> : logs.map((log) => <div className="ads-check" key={`${log.adId}-${log.actionAt}`}><span className="ads-check-icon">{log.action === "paused" ? "✓" : "!"}</span><div><strong>{log.adName}</strong><small>{new Date(log.actionAt).toLocaleString()} · {log.issue}</small></div><span className={`ads-status ads-status-${log.action === "paused" ? "active" : "unsettled"}`}><i />{log.actionError || log.action}</span></div>)}</div>
       </section>
 
       <section className="ads-section">
