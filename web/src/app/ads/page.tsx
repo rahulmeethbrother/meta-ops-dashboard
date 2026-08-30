@@ -126,7 +126,7 @@ function AdsDashboard() {
               <div className="spread"><div><strong>{account.name}</strong><small>{account.accountId}</small></div><span className={`ads-status ads-status-${account.status}`}><i />{statusLabel(account.status)}</span></div>
               <div className="ads-account-spend"><span>Today’s spend</span><strong>{money(account.spend)}</strong></div>
               <div className="ads-mini-grid"><div><span>CPM</span><b>{money(account.cpm)}</b></div><div><span>CTR</span><b>{account.ctr.toFixed(2)}%</b></div><div><span>CPC</span><b>{money(account.cpc)}</b></div><div><span>LPV cost</span><b>{money(account.costPerLpv)}</b></div></div>
-              <div className="ads-account-foot"><span>{account.activeCampaigns} active campaigns</span>{account.rejectedAds > 0 && <span className="ads-rejected">{account.rejectedAds} rejected ads</span>}</div>
+               <div className="ads-account-foot"><span>{account.activeCampaigns} campaigns · {account.activeAdsets} ad sets · {account.activeAds} ads active</span>{account.rejectedAds > 0 && <span className="ads-rejected">{account.rejectedAds} rejected ads</span>}</div>
             </article>
           ))}
         </div>

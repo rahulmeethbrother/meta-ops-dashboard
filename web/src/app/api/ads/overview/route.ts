@@ -6,6 +6,21 @@ import { isMetaOpsAuthorized, META_OPS_COOKIE } from "@/lib/meta-ops-auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function decode(result: unknown): Record<string, unknown> {
+  const text = (result as { content?: Array<{ text?: string }> })?.content?.[0]?.text;
+  if (!text) return (result as Record<string, unknown>) || {};
+  try { return JSON.parse(text) as Record<string, unknown>; } catch { return {}; }
+}
+
+function activeCount(result: unknown) {
+  const rows = decode(result).data;
+  if (!Array.isArray(rows)) return 0;
+  return rows.filter((row: Record<string, unknown>) => {
+    const status = String(row.status || row.effective_status || "").toLowerCase();
+    return status === "active" || status === "running";
+  }).length;
+}
+
 export async function GET(request: NextRequest) {
   if (!isMetaOpsAuthorized(request.cookies.get(META_OPS_COOKIE)?.value)) {
     return NextResponse.json({ error: "Meta Ops password required" }, { status: 401 });
@@ -29,14 +44,14 @@ export async function GET(request: NextRequest) {
       const rawId = String(account.id || account.account_id || "");
       const accountId = rawId.startsWith("act_") ? rawId : `act_${rawId}`;
       try {
-        const result = await callPipeboardTool("get_insights", {
-          object_id: accountId,
-          time_range: "today",
-          level: "account",
-          limit: 25,
-        });
-        const text = (result as { content?: Array<{ text?: string }> })?.content?.[0]?.text;
-        const row = text ? (JSON.parse(text)?.data?.[0] ?? {}) : {};
+        const [result, campaignResult, adsetResult, adResult] = await Promise.all([
+          callPipeboardTool("get_insights", { object_id: accountId, time_range: "today", level: "account", limit: 25 }),
+          callPipeboardTool("get_campaigns", { account_id: accountId, limit: 200, status_filter: "ACTIVE" }),
+          callPipeboardTool("get_adsets", { account_id: accountId, limit: 200 }),
+          callPipeboardTool("get_ads", { account_id: accountId, limit: 200 }),
+        ]);
+        const insightRows = decode(result).data;
+        const row = (Array.isArray(insightRows) ? insightRows[0] : {}) as Record<string, any>;
         const action = (row.actions ?? []).find((item: Record<string, unknown>) =>
           item.action_type === "omni_landing_page_view" || item.action_type === "landing_page_view",
         );
@@ -57,7 +72,9 @@ export async function GET(request: NextRequest) {
           cpc: clicks ? spend / clicks : 0,
           costPerLpv: lpvs ? spend / lpvs : 0,
           rejectedAds: 0,
-          activeCampaigns: 0,
+           activeCampaigns: activeCount(campaignResult),
+           activeAdsets: activeCount(adsetResult),
+           activeAds: activeCount(adResult),
           dailyBudget: 0,
         };
       } catch {
@@ -75,6 +92,8 @@ export async function GET(request: NextRequest) {
           costPerLpv: 0,
           rejectedAds: 0,
           activeCampaigns: 0,
+          activeAdsets: 0,
+          activeAds: 0,
           dailyBudget: 0,
         };
       }

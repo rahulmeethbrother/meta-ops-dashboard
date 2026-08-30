@@ -12,6 +12,8 @@ export interface MetaAccountMetric {
   costPerLpv: number;
   rejectedAds: number;
   activeCampaigns: number;
+  activeAdsets: number;
+  activeAds: number;
   dailyBudget: number;
 }
 
@@ -43,6 +45,8 @@ export const DEMO_META_OVERVIEW: MetaOverview = {
       costPerLpv: 0.1405,
       rejectedAds: 0,
       activeCampaigns: 0,
+      activeAdsets: 0,
+      activeAds: 0,
       dailyBudget: 500,
     },
     {
@@ -59,6 +63,8 @@ export const DEMO_META_OVERVIEW: MetaOverview = {
       costPerLpv: 0.0119,
       rejectedAds: 1,
       activeCampaigns: 5,
+      activeAdsets: 85,
+      activeAds: 85,
       dailyBudget: 95,
     },
     {
@@ -75,6 +81,8 @@ export const DEMO_META_OVERVIEW: MetaOverview = {
       costPerLpv: 0.1548,
       rejectedAds: 0,
       activeCampaigns: 0,
+      activeAdsets: 0,
+      activeAds: 0,
       dailyBudget: 0,
     },
     {
@@ -91,6 +99,8 @@ export const DEMO_META_OVERVIEW: MetaOverview = {
       costPerLpv: 0,
       rejectedAds: 19,
       activeCampaigns: 0,
+      activeAdsets: 0,
+      activeAds: 0,
       dailyBudget: 19,
     },
   ],
