@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { MetaOverview } from "@/lib/meta-dashboard";
 
+type RejectedAd = { adId: string; adName: string; accountId: string; status: string; issue: string; detectedAt: string };
+
 function money(value: number) {
   return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
@@ -16,6 +18,7 @@ function AdsDashboard() {
   const [overview, setOverview] = useState<MetaOverview | null>(null);
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [rejected, setRejected] = useState<RejectedAd[]>([]);
 
   async function load() {
     setRefreshing(true);
@@ -27,7 +30,9 @@ function AdsDashboard() {
          return;
        }
        if (!response.ok) throw new Error(await response.text());
-      setOverview((await response.json()) as MetaOverview);
+       setOverview((await response.json()) as MetaOverview);
+       const rejectionResponse = await fetch("/api/ads/rejections", { cache: "no-store" });
+       if (rejectionResponse.ok) setRejected(((await rejectionResponse.json()) as { rejected?: RejectedAd[] }).rejected ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load metrics");
     } finally {
@@ -101,6 +106,11 @@ function AdsDashboard() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="ads-section">
+        <div className="spread"><div><span className="ads-section-kicker">REJECTION MONITOR</span><h2>Rejected and still active</h2></div><span className="muted">Auto-action: pause</span></div>
+        {rejected.length === 0 ? <div className="ads-panel"><p className="muted">No active rejected ads found in the latest check.</p></div> : <div className="ads-panel">{rejected.map((ad) => <div className="ads-check" key={ad.adId}><span className="ads-check-icon">!</span><div><strong>{ad.adName}</strong><small>{ad.accountId} · {ad.issue}</small></div><span className="ads-status ads-status-unsettled"><i />{ad.status}</span></div>)}</div>}
       </section>
 
       <section className="ads-lower-grid">

@@ -30,3 +30,5 @@ services:
         sync: false
       - key: META_OPS_PASSWORD
         sync: false
+      - key: META_MONITOR_SECRET
+        sync: false
