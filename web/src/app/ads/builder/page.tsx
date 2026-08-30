@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 const defaultLinks = ["https://cutt.ly/0ydtKriA", "https://cutt.ly/PydtKHqY", "https://cutt.ly/VydyVqZ9", "https://cutt.ly/dydyVQyu", "https://cutt.ly/3ydrYllJ"];
+type MetaOption = { id: string; name: string; logo?: string | null };
 
 function Builder() {
   const [folder, setFolder] = useState("image_generator/generated_images_500");
@@ -11,6 +12,8 @@ function Builder() {
   const [assetLinks, setAssetLinks] = useState("");
   const [accountId, setAccountId] = useState("act_1074141625049232");
   const [pageId, setPageId] = useState("1199486309913687");
+  const [accounts, setAccounts] = useState<MetaOption[]>([]);
+  const [pages, setPages] = useState<MetaOption[]>([]);
   const [country, setCountry] = useState("SA");
   const [minAge, setMinAge] = useState("18");
   const [maxAge, setMaxAge] = useState("65");
@@ -33,6 +36,16 @@ function Builder() {
     });
   }, []);
 
+  useEffect(() => {
+    void fetch(`/api/ads/options?accountId=${encodeURIComponent(accountId)}`, { cache: "no-store" }).then(async (response) => {
+      if (!response.ok) return;
+      const data = await response.json() as { accounts?: MetaOption[]; pages?: MetaOption[] };
+      setAccounts(data.accounts ?? []);
+      setPages(data.pages ?? []);
+      if (data.pages?.length && !data.pages.some((page) => page.id === pageId)) setPageId(data.pages[0].id);
+    });
+  }, [accountId]);
+
   const plan = useMemo(() => {
     const campaignCount = links.filter(Boolean).length;
     const imageCount = assetSource === "local_folder" ? 150 : assetLinks.split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean).length;
@@ -41,6 +54,8 @@ function Builder() {
     const ads = adsets * Math.max(0, Number(adsPerAdSet) || 0);
     return { campaigns: campaignCount * copyCount, adsets, ads, images: imageCount, daily: budgetMode === "cbo" ? Number(budget || 0) * campaignCount * copyCount : Number(budget || 0) * adsets };
   }, [adSetsPerCampaign, adsPerAdSet, assetLinks, assetSource, budget, budgetMode, copies, links]);
+  const selectedAccount = accounts.find((account) => account.id === accountId);
+  const selectedPage = pages.find((page) => page.id === pageId);
 
   return <div className="builder-page">
     <div className="builder-top"><Link href="/ads" className="ads-back">← Operations</Link><span className="ads-eyebrow">LIVE BUILDER / PLAN FIRST</span></div>
@@ -50,7 +65,8 @@ function Builder() {
         <div className="builder-form-title"><span>01</span><div><h2>Campaign inputs</h2><p>Nothing publishes until the plan is reviewed.</p></div></div>
         <div className="builder-two"><label>Asset source<select value={assetSource} onChange={(event) => setAssetSource(event.target.value)}><option value="local_folder">Local folder</option><option value="image_urls">Image URLs</option><option value="dropbox">Dropbox folder/link</option><option value="mixed">Mixed sources</option></select></label><label>Local image folder<input value={folder} onChange={(event) => setFolder(event.target.value)} /></label></div>
         <label>Image URLs or Dropbox links <textarea rows={3} value={assetLinks} onChange={(event) => setAssetLinks(event.target.value)} placeholder="One public image URL or Dropbox file/folder link per line" /></label>
-        <div className="builder-two"><label>Ad account<input value={accountId} onChange={(event) => setAccountId(event.target.value)} /></label><label>Facebook Page<input value={pageId} onChange={(event) => setPageId(event.target.value)} /></label></div>
+        <div className="builder-two"><label>Ad account<select value={accountId} onChange={(event) => setAccountId(event.target.value)}>{accounts.length ? accounts.map((account) => <option value={account.id} key={account.id}>{account.name} · {account.id}</option>) : <option value={accountId}>{accountId} · loading accounts…</option>}</select></label><label>Facebook Page<select value={pageId} onChange={(event) => setPageId(event.target.value)}>{pages.length ? pages.map((page) => <option value={page.id} key={page.id}>{page.name} · {page.id}</option>) : <option value={pageId}>{pageId} · loading Pages…</option>}</select></label></div>
+        <div className="builder-identities">{selectedAccount && <span>{selectedAccount.logo ? <img src={selectedAccount.logo} alt="" /> : <i />}{selectedAccount.name}</span>}{selectedPage && <span>{selectedPage.logo ? <img src={selectedPage.logo} alt="" /> : <i />}{selectedPage.name}</span>}</div>
         <div className="builder-two"><label>Country<select value={country} onChange={(event) => setCountry(event.target.value)}><option value="SA">Saudi Arabia</option><option value="CA">Canada</option><option value="AU">Australia</option><option value="NZ">New Zealand</option></select></label><label>Copies per link<input type="number" min="1" max="5" value={copies} onChange={(event) => setCopies(event.target.value)} /></label></div>
         <div className="builder-two"><label>Min age<input type="number" min="18" max="65" value={minAge} onChange={(event) => setMinAge(event.target.value)} /></label><label>Max age<input type="number" min="18" max="65" value={maxAge} onChange={(event) => setMaxAge(event.target.value)} /></label></div>
         <div className="builder-two"><label>Gender<select value={gender} onChange={(event) => setGender(event.target.value)}><option value="male">Men</option><option value="female">Women</option><option value="all">All genders</option></select></label><label>Budget mode<select value={budgetMode} onChange={(event) => setBudgetMode(event.target.value)}><option value="abo">ABO · budget per ad set</option><option value="cbo">CBO · budget per campaign</option></select></label></div>
