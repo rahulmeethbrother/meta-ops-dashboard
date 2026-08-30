@@ -9,13 +9,13 @@ services:
     plan: free
     envVars:
       - key: NEXT_PUBLIC_FIREBASE_API_KEY
-        sync: false
+        value: demo-api-key
       - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-        sync: false
+        value: demo.firebaseapp.com
       - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-        sync: false
+        value: demo-project
       - key: NEXT_PUBLIC_FIREBASE_APP_ID
-        sync: false
+        value: demo-app-id
       - key: FIREBASE_SERVICE_ACCOUNT_B64
         sync: false
       - key: GCP_PROJECT
