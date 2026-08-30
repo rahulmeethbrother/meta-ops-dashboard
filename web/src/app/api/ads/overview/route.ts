@@ -22,8 +22,10 @@ export async function GET() {
     const accounts = rawAccounts ? JSON.parse(rawAccounts) : accountsResult;
     const accountRows = Array.isArray(accounts?.data) ? accounts.data : [];
     const metrics = await Promise.all(accountRows.map(async (account: Record<string, unknown>) => {
+      const rawId = String(account.id || account.account_id || "");
+      const accountId = rawId.startsWith("act_") ? rawId : `act_${rawId}`;
       const result = await callPipeboardTool("get_insights", {
-        object_id: String(account.id || account.account_id || ""),
+        object_id: accountId,
         time_range: "today",
         level: "account",
         limit: 25,
@@ -38,8 +40,8 @@ export async function GET() {
       const clicks = Number(row.clicks || 0);
       const lpvs = Number(action?.value || 0);
       return {
-        accountId: String(account.id || account.account_id || ""),
-        name: String(account.name || row.account_name || account.id || "Meta account"),
+        accountId,
+        name: String(account.name || row.account_name || accountId),
         status: account.account_status === 1 ? "active" : "disabled",
         spend,
         impressions,
