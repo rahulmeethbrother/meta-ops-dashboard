@@ -41,7 +41,6 @@ services:
     schedule: "*/5 * * * *"
     buildCommand: npm ci
     startCommand: node scripts/meta-monitor.mjs
-    plan: free
     envVars:
       - key: META_OPS_URL
         fromService:
