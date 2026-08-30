@@ -1,10 +1,8 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useSearchParams } from "next/navigation";
 
 export default function AdsAccessPage() {
-  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -23,7 +21,7 @@ export default function AdsAccessPage() {
       setBusy(false);
       return;
     }
-    window.location.href = searchParams.get("next") || "/ads";
+    window.location.href = new URLSearchParams(window.location.search).get("next") || "/ads";
   }
 
   return (
