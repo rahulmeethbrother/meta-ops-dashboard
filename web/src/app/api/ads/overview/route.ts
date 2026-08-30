@@ -1,11 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { DEMO_META_OVERVIEW } from "@/lib/meta-dashboard";
 import { callPipeboardTool } from "@/lib/pipeboard-mcp";
+import { isMetaOpsAuthorized, META_OPS_COOKIE } from "@/lib/meta-ops-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!isMetaOpsAuthorized(request.cookies.get(META_OPS_COOKIE)?.value)) {
+    return NextResponse.json({ error: "Meta Ops password required" }, { status: 401 });
+  }
   if (!process.env.PIPEBOARD_MCP_TOKEN) {
     return NextResponse.json({
       ...DEMO_META_OVERVIEW,

@@ -22,7 +22,11 @@ function AdsDashboard() {
     setError("");
     try {
        const response = await fetch("/api/ads/overview", { cache: "no-store" });
-      if (!response.ok) throw new Error(await response.text());
+       if (response.status === 401) {
+         window.location.href = "/ads/access?next=/ads";
+         return;
+       }
+       if (!response.ok) throw new Error(await response.text());
       setOverview((await response.json()) as MetaOverview);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load metrics");
