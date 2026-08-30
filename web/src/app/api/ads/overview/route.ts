@@ -14,7 +14,7 @@ export async function GET() {
   }
 
   try {
-    const accountsResult = await callPipeboardTool("mcp_meta_ads_get_ad_accounts", {
+    const accountsResult = await callPipeboardTool("get_ad_accounts", {
       user_id: "me",
       limit: 200,
     });
